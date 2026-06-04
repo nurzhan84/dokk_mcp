@@ -1,0 +1,30 @@
+{
+  "name": "@doka/mcp-server",
+  "private": true,
+  "version": "0.0.1",
+  "type": "module",
+  "description": "MCP server that exposes a Doka collab agent — AI tools to join a board, add elements, and ask the host to create new boards.",
+  "scripts": {
+    "dev": "tsx watch src/transport/stdio.ts",
+    "start:stdio": "tsx src/transport/stdio.ts",
+    "start:http": "tsx src/transport/http.ts",
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc --noEmit",
+    "test": "tsx src/smoke.ts"
+  },
+  "bin": {
+    "doka-mcp-stdio": "./bin/doka-mcp-stdio.js",
+    "doka-mcp-http": "./bin/doka-mcp-http.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.4",
+    "ws": "^8.18.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^24.12.0",
+    "@types/ws": "^8.5.13",
+    "tsx": "^4.19.2",
+    "typescript": "~5.9.3"
+  }
+}
