@@ -16,6 +16,7 @@ import {
   addImageInput,
   addShapeInput,
   addTextInput,
+  addYouTubeInput,
   arrangeInput,
   connectInput,
   createBoardInput,
@@ -38,6 +39,50 @@ function ok(payload: unknown): { content: { type: 'text'; text: string }[] } {
 function fail(err: unknown): { isError: true; content: { type: 'text'; text: string }[] } {
   const message = err instanceof Error ? err.message : String(err);
   return { isError: true, content: [{ type: 'text', text: message }] };
+}
+
+// YouTube URL → { videoId, start } parsing. Mirrors the SPA's parser in
+// src/utils/youtube.ts (the MCP server is a separate package, so the ~30
+// lines are duplicated rather than reaching across package roots) — keep
+// the two in sync when adding URL shapes.
+const YT_ID_RE = /^[A-Za-z0-9_-]{11}$/;
+
+function parseYouTubeStart(raw: string | null): number | undefined {
+  if (!raw) return undefined;
+  if (/^\d+$/.test(raw)) return Number(raw) > 0 ? Number(raw) : undefined;
+  const m = raw.match(/^(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s)?$/);
+  if (!m || (!m[1] && !m[2] && !m[3])) return undefined;
+  const s = Number(m[1] ?? 0) * 3600 + Number(m[2] ?? 0) * 60 + Number(m[3] ?? 0);
+  return s > 0 ? s : undefined;
+}
+
+function parseYouTubeInput(raw: string): { videoId: string; start?: number } | null {
+  const text = raw.trim();
+  if (YT_ID_RE.test(text)) return { videoId: text };
+  if (!/^https?:\/\//i.test(text)) return null;
+  let url: URL;
+  try {
+    url = new URL(text);
+  } catch {
+    return null;
+  }
+  const host = url.hostname.replace(/^www\.|^m\./, '').toLowerCase();
+  let videoId: string | null = null;
+  if (host === 'youtu.be') {
+    videoId = url.pathname.slice(1).split('/')[0] || null;
+  } else if (host === 'youtube.com' || host === 'youtube-nocookie.com' || host === 'music.youtube.com') {
+    if (url.pathname === '/watch') {
+      videoId = url.searchParams.get('v');
+    } else {
+      const m = url.pathname.match(/^\/(?:shorts|live|embed|v)\/([^/?]+)/);
+      videoId = m ? m[1] : null;
+    }
+  } else {
+    return null;
+  }
+  if (!videoId || !YT_ID_RE.test(videoId)) return null;
+  const start = parseYouTubeStart(url.searchParams.get('t') ?? url.searchParams.get('start'));
+  return start !== undefined ? { videoId, start } : { videoId };
 }
 
 const EXT_MIME: Record<string, string> = {
@@ -839,6 +884,49 @@ export function registerTools(server: McpServer, agent: DokaAgent): void {
         };
         await agent.addElement(element);
         return ok(inlineNote.length ? { id, warnings: inlineNote } : { id });
+      } catch (err) {
+        return fail(err);
+      }
+    },
+  );
+
+  server.registerTool(
+    'doka_add_youtube',
+    {
+      title: 'Add an embedded YouTube video',
+      description:
+        'Embed a YouTube player on the board. `url` accepts any regular YouTube URL ' +
+        '(watch?v=…, youtu.be/…, shorts/…, live/…, embed/…, optional t= timestamp) or a bare ' +
+        '11-character video id. The element renders as the video thumbnail with a play button; ' +
+        'clicking play swaps in the real player. Only the video id is stored — no binary ' +
+        'payload. Default size is 560×315 (16:9); pass width/height to override. ' +
+        'Position (x, y) is the top-left corner.',
+      inputSchema: addYouTubeInput.shape,
+    },
+    async ({ url, x, y, width, height, rotation }) => {
+      try {
+        const parsed = parseYouTubeInput(url);
+        if (!parsed) {
+          return fail(new Error(
+            `Not a recognizable YouTube URL or video id: "${url}". ` +
+            'Expected youtube.com/watch?v=…, youtu.be/…, shorts/…, live/…, embed/…, or a bare 11-char id.',
+          ));
+        }
+        const id = randomUUID();
+        const element: BoardElementLike = {
+          id,
+          type: 'youtube',
+          x,
+          y,
+          width: width ?? 560,
+          height: height ?? 315,
+          videoId: parsed.videoId,
+          ...(parsed.start !== undefined ? { start: parsed.start } : {}),
+          color: 'transparent',
+          rotation,
+        };
+        await agent.addElement(element);
+        return ok({ id, videoId: parsed.videoId });
       } catch (err) {
         return fail(err);
       }

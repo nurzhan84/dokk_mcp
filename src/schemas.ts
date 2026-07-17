@@ -86,6 +86,17 @@ export const addArrowInput = z.object({
   waypoints: z.array(waypointSchema).optional(),
 });
 
+export const addYouTubeInput = z.object({
+  /** Full YouTube URL (watch / youtu.be / shorts / live / embed, optional
+   *  t= timestamp) — or a bare 11-char video id. */
+  url: z.string().min(1),
+  x: z.number(),
+  y: z.number(),
+  width: z.number().positive().optional(),
+  height: z.number().positive().optional(),
+  rotation: z.number().optional(),
+});
+
 export const addImageInput = z.object({
   x: z.number(),
   y: z.number(),
