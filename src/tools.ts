@@ -768,7 +768,11 @@ export function registerTools(server: McpServer, agent: DokaAgent): void {
       title: 'Add an arrow element',
       description:
         'Connect two anchors. Each end can be either an existing nodeId (with optional port) ' +
-        'or free-form coordinates (startX/startY / endX/endY). Returns the new id.',
+        'or free-form coordinates (startX/startY / endX/endY). Returns the new id. ' +
+        'Arrowheads are settable per end via `startHead` / `endHead` ' +
+        "('none' | 'arrow' | 'circle'); defaults are startHead='none', endHead='arrow'. " +
+        "Use endHead='none' for plain connector lines, 'circle' for schematic junction dots, " +
+        'and heads on both ends for bidirectional relations.',
       inputSchema: addArrowInput.shape,
     },
     async (args) => {
@@ -876,7 +880,8 @@ export function registerTools(server: McpServer, agent: DokaAgent): void {
         'in the same op as your patch. The response returns `appliedHeight` and `appliedTextColor` ' +
         'so you can see what actually shipped. ' +
         'For info shapes specifically, width / height / color / textColor / fontSize are locked ' +
-        'and silently dropped from the patch.',
+        'and silently dropped from the patch. ' +
+        "For arrows, `startHead` / `endHead` ('none' | 'arrow' | 'circle') change the arrowheads.",
       inputSchema: updateElementInput.shape,
     },
     async ({ id, patch }) => {

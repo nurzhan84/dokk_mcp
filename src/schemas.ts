@@ -66,6 +66,10 @@ export const addArrowInput = z.object({
   color: colorSchema.default('#475569'),
   lineWidth: z.number().positive().optional(),
   lineStyle: z.enum(['solid', 'dashed', 'dotted']).optional(),
+  // Arrowheads per end. Defaults mirror the SPA: no head at the start,
+  // classic triangle at the end. 'circle' renders a filled dot.
+  startHead: z.enum(['none', 'arrow', 'circle']).optional(),
+  endHead: z.enum(['none', 'arrow', 'circle']).optional(),
   // Either anchor to an existing node (startId + optional startPort) OR
   // free-form via startX/startY. The SPA accepts both; we don't enforce
   // mutual exclusion so callers can mix (e.g. anchored start, free end).
