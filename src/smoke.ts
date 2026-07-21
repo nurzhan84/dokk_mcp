@@ -1,9 +1,9 @@
-// End-to-end smoke for DokaAgent against a self-contained collab server.
+// End-to-end smoke for DokkAgent against a self-contained collab server.
 //
 // Spins up a Session-backed WebSocket server (mirroring the pattern in
 // server/collab/src/agent-smoke-test.ts), runs a stub "host" peer that does
 // what the SPA's op-bridge would do (seed an invite + hierarchy, answer
-// hierarchyRequest), then drives DokaAgent through:
+// hierarchyRequest), then drives DokkAgent through:
 //
 //   connect → add_shape → createBoard → switchBoard → add_shape → disconnect
 //
@@ -15,7 +15,7 @@ import { randomUUID } from 'node:crypto';
 import { WebSocket, WebSocketServer } from 'ws';
 import { Session, type Transport } from '../../collab/src/session.js';
 import { PROTOCOL_VERSION, type ServerMessage } from './protocol.js';
-import { DokaAgent } from './core/doka-agent.js';
+import { DokkAgent } from './core/dokk-agent.js';
 
 const BOARD_ENTRY = 'mcp-smoke-entry';
 
@@ -177,7 +177,7 @@ async function main(): Promise<void> {
   }
 
   // --- Agent flow ---
-  const agent = new DokaAgent();
+  const agent = new DokkAgent();
   const welcome = await agent.connect({
     collabUrl,
     boardId: BOARD_ENTRY,
@@ -231,7 +231,7 @@ async function main(): Promise<void> {
   assert(entryAdds.some((o) => o.elementId === entryShapeId),
     `entry-board addElement op not seen by host (got ${JSON.stringify(entryAdds)})`);
 
-  console.log('\n✅ doka-mcp smoke OK', {
+  console.log('\n✅ dokk-mcp smoke OK', {
     agentPeerId: welcome.peerId,
     createdBoardId: createdId,
     entryOps: opsOnEntry.length,

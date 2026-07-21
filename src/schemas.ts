@@ -141,32 +141,32 @@ export const connectInput = z.object({
     .optional()
     .describe(
       'Base WebSocket URL of the collab server, e.g. ws://localhost:8787. ' +
-      'Falls back to the DOKA_COLLAB_URL env var if omitted.',
+      'Falls back to the DOKK_COLLAB_URL env var if omitted.',
     ),
   boardId: z
     .string()
     .min(1)
     .optional()
-    .describe('Falls back to the DOKA_BOARD_ID env var if omitted.'),
+    .describe('Falls back to the DOKK_BOARD_ID env var if omitted.'),
   inviteToken: z
     .string()
     .min(1)
     .optional()
     .describe(
       'Invite token copied from the host\'s Share dialog. Falls back to the ' +
-      'DOKA_INVITE_TOKEN env var if omitted.',
+      'DOKK_INVITE_TOKEN env var if omitted.',
     ),
   name: z
     .string()
     .min(1)
     .max(64)
     .optional()
-    .describe('Display name shown to other peers. Falls back to DOKA_AGENT_NAME, then "AI Agent".'),
+    .describe('Display name shown to other peers. Falls back to DOKK_AGENT_NAME, then "AI Agent".'),
   controlledBy: z
     .string()
     .max(64)
     .optional()
-    .describe('Who is driving the agent (shown in presence). Falls back to DOKA_CONTROLLED_BY.'),
+    .describe('Who is driving the agent (shown in presence). Falls back to DOKK_CONTROLLED_BY.'),
 });
 
 export const createBoardInput = z.object({

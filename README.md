@@ -1,7 +1,7 @@
-# Doka MCP server
+# Dokk MCP server
 
 An [MCP](https://modelcontextprotocol.io/) server that lets an AI agent join a
-Doka collab session like any other peer — adding shapes, arrows, images and
+Dokk collab session like any other peer — adding shapes, arrows, images and
 text, and asking the host to create new boards. It speaks the same WebSocket
 protocol the SPA uses, so to other peers the agent looks (and shows up in
 presence as) a normal guest with `isAgent: true`.
@@ -13,11 +13,11 @@ Claude (or any MCP client)
         │
         │ stdio  or  HTTP/SSE
         ▼
-   Doka MCP server  (this package)
+   Dokk MCP server  (this package)
         │
         │ ws://  (existing collab protocol)
         ▼
-   Doka collab server (server/collab/)
+   Dokk collab server (server/collab/)
         ▲
         │
    Human host (browser) — owns GitHub credentials, mints invite tokens,
@@ -33,7 +33,7 @@ tool calls.
 ## Authentication
 
 The agent reuses **human invite tokens**. A human opens the Share dialog in
-the Doka SPA, copies the token, and passes it to the `doka_connect` tool.
+the Dokk SPA, copies the token, and passes it to the `dokk_connect` tool.
 Tokens have the same TTL and single-concurrent-use semantics as human
 invites — the host can revoke by kicking the agent.
 
@@ -55,18 +55,18 @@ npm run mcp:test
 
 ## Connection defaults via env vars
 
-`doka_connect` accepts everything as call-time args, but every field also
-falls back to a matching `DOKA_*` env var so MCP clients can supply them
+`dokk_connect` accepts everything as call-time args, but every field also
+falls back to a matching `DOKK_*` env var so MCP clients can supply them
 once in config instead of forcing the agent to repeat them per call:
 
 | Env var | Used as |
 |---|---|
-| `DOKA_COLLAB_URL` | `collabUrl` default |
-| `DOKA_BOARD_ID` | `boardId` default |
-| `DOKA_INVITE_TOKEN` | `inviteToken` default |
-| `DOKA_AGENT_NAME` | `name` default |
-| `DOKA_CONTROLLED_BY` | `controlledBy` default |
-| `DOKA_AUTOCONNECT` | If `1` / `true`, the server opens the session at startup so the agent can go straight to `add_*` / `list_*` without calling `doka_connect` at all. Errors are logged to stderr; the process stays up either way. |
+| `DOKK_COLLAB_URL` | `collabUrl` default |
+| `DOKK_BOARD_ID` | `boardId` default |
+| `DOKK_INVITE_TOKEN` | `inviteToken` default |
+| `DOKK_AGENT_NAME` | `name` default |
+| `DOKK_CONTROLLED_BY` | `controlledBy` default |
+| `DOKK_AUTOCONNECT` | If `1` / `true`, the server opens the session at startup so the agent can go straight to `add_*` / `list_*` without calling `dokk_connect` at all. Errors are logged to stderr; the process stays up either way. |
 
 ## Claude Desktop config
 
@@ -76,26 +76,26 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json`
 ```json
 {
   "mcpServers": {
-    "doka": {
+    "dokk": {
       "command": "node",
-      "args": ["/absolute/path/to/doka/server/mcp/bin/doka-mcp-stdio.js"],
+      "args": ["/absolute/path/to/dokk/server/mcp/bin/dokk-mcp-stdio.js"],
       "env": {
-        "DOKA_COLLAB_URL": "ws://localhost:8787",
-        "DOKA_BOARD_ID": "<board id from the SPA URL>",
-        "DOKA_INVITE_TOKEN": "<invite token from the Share dialog>",
-        "DOKA_AGENT_NAME": "Claude",
-        "DOKA_AUTOCONNECT": "1"
+        "DOKK_COLLAB_URL": "ws://localhost:8787",
+        "DOKK_BOARD_ID": "<board id from the SPA URL>",
+        "DOKK_INVITE_TOKEN": "<invite token from the Share dialog>",
+        "DOKK_AGENT_NAME": "Claude",
+        "DOKK_AUTOCONNECT": "1"
       }
     }
   }
 }
 ```
 
-After reloading Claude Desktop, you'll see the `doka_*` tools listed and
-the agent will already be connected. Bumping `DOKA_BOARD_ID` /
-`DOKA_INVITE_TOKEN` later requires a config reload (Cmd+Q + reopen).
+After reloading Claude Desktop, you'll see the `dokk_*` tools listed and
+the agent will already be connected. Bumping `DOKK_BOARD_ID` /
+`DOKK_INVITE_TOKEN` later requires a config reload (Cmd+Q + reopen).
 
-The same env vars work whether the host's Doka document is backed by
+The same env vars work whether the host's Dokk document is backed by
 **GitHub**, **GitLab** or **Bitbucket Cloud** — the MCP server talks to
 the collab WebSocket, which is provider-agnostic. The host's SPA is the
 only side that needs the provider-specific token; invite tokens encode
@@ -108,76 +108,76 @@ Codex uses a TOML config at `~/.codex/config.toml`. The structure mirrors
 the Claude Desktop one but with TOML syntax:
 
 ```toml
-[mcp_servers.doka]
+[mcp_servers.dokk]
 command = "node"
-args    = ["/absolute/path/to/doka/server/mcp/bin/doka-mcp-stdio.js"]
+args    = ["/absolute/path/to/dokk/server/mcp/bin/dokk-mcp-stdio.js"]
 
-[mcp_servers.doka.env]
-DOKA_COLLAB_URL   = "ws://localhost:8787"
-DOKA_BOARD_ID     = "<board id from the SPA URL>"
-DOKA_INVITE_TOKEN = "<invite token from the Share dialog>"
-DOKA_AGENT_NAME   = "Codex"
-DOKA_AUTOCONNECT  = "1"
+[mcp_servers.dokk.env]
+DOKK_COLLAB_URL   = "ws://localhost:8787"
+DOKK_BOARD_ID     = "<board id from the SPA URL>"
+DOKK_INVITE_TOKEN = "<invite token from the Share dialog>"
+DOKK_AGENT_NAME   = "Codex"
+DOKK_AUTOCONNECT  = "1"
 ```
 
 The next `codex` run will pick it up — no separate restart step. The agent
-sees the `doka_*` tools and can act without first asking for credentials.
+sees the `dokk_*` tools and can act without first asking for credentials.
 
 ## Where to find each value
 
-- **`DOKA_BOARD_ID`** — open the board in the SPA, copy the segment after
+- **`DOKK_BOARD_ID`** — open the board in the SPA, copy the segment after
   `/board/` in the URL.
-- **`DOKA_INVITE_TOKEN`** — in the SPA, right-click the board (or document /
+- **`DOKK_INVITE_TOKEN`** — in the SPA, right-click the board (or document /
   chapter, depending on the scope you want) → Share → copy the token from
   the generated link. Tokens are single-concurrent-use and TTL-bounded
   (24 h); regenerate from the same dialog when the old one runs out.
-- **`DOKA_COLLAB_URL`** — wherever you run the collab server. The default
+- **`DOKK_COLLAB_URL`** — wherever you run the collab server. The default
   for `npm run collab:start` is `ws://localhost:8787`.
 
 ## Tools
 
-All tools are namespaced `doka_*`. Connection state is per-MCP-session.
+All tools are namespaced `dokk_*`. Connection state is per-MCP-session.
 
 ### Connection / hierarchy
 
 | Tool | What it does |
 |---|---|
-| `doka_connect` | Open a collab session: `{ collabUrl, boardId, inviteToken, name?, controlledBy? }`. Returns `{ peerId, snapshot, peers, hierarchyItems, allowedBoardIds, readOnly }`. |
-| `doka_disconnect` | Close the current session. Idempotent. |
-| `doka_switch_board` | Disconnect and reconnect on `{ boardId }` reusing the same invite. The board must be in the invite's scope. |
-| `doka_create_board` | Ask the host to add a board: `{ title, parentChapterId?, switchTo? }`. Returns `{ boardId, switched }`. Defaults `switchTo: true` — most "create + populate" flows want that. |
+| `dokk_connect` | Open a collab session: `{ collabUrl, boardId, inviteToken, name?, controlledBy? }`. Returns `{ peerId, snapshot, peers, hierarchyItems, allowedBoardIds, readOnly }`. |
+| `dokk_disconnect` | Close the current session. Idempotent. |
+| `dokk_switch_board` | Disconnect and reconnect on `{ boardId }` reusing the same invite. The board must be in the invite's scope. |
+| `dokk_create_board` | Ask the host to add a board: `{ title, parentChapterId?, switchTo? }`. Returns `{ boardId, switched }`. Defaults `switchTo: true` — most "create + populate" flows want that. |
 
 ### Observation
 
 | Tool | What it does |
 |---|---|
-| `doka_list_elements` | Returns the in-memory snapshot of the current board. |
-| `doka_get_element` | `{ id }` → element or `null`. |
-| `doka_list_peers` | Returns the live peer roster. |
+| `dokk_list_elements` | Returns the in-memory snapshot of the current board. |
+| `dokk_get_element` | `{ id }` → element or `null`. |
+| `dokk_list_peers` | Returns the live peer roster. |
 
 ### Element ops
 
 | Tool | What it does |
 |---|---|
-| `doka_add_shape` | `rectangle` / `circle` / `triangle` / `rhombus` / `message` / `text` / `info`. Returns `{ id }`. |
-| `doka_add_text` | Shorthand for a `shape` of type `text` with sensible defaults. |
-| `doka_add_arrow` | Connect two anchors (either anchored to a nodeId+port or free-form via `startX/Y` / `endX/Y`). |
-| `doka_add_image` | `src` may be a `data:` URL or an absolute local file path (png/jpg/gif/webp/svg). File paths are read and base64-encoded locally. |
-| `doka_add_drawing` | Freeform path (with per-point stroke width) in a `baseWidth × baseHeight` viewBox. |
-| `doka_update_element` | `{ id, patch }` — shallow merges into the element. |
-| `doka_remove_element` | `{ id }`. |
-| `doka_arrange` | `{ ids, direction: 'up' \| 'down' \| 'front' \| 'back' }`. |
+| `dokk_add_shape` | `rectangle` / `circle` / `triangle` / `rhombus` / `message` / `text` / `info`. Returns `{ id }`. |
+| `dokk_add_text` | Shorthand for a `shape` of type `text` with sensible defaults. |
+| `dokk_add_arrow` | Connect two anchors (either anchored to a nodeId+port or free-form via `startX/Y` / `endX/Y`). |
+| `dokk_add_image` | `src` may be a `data:` URL or an absolute local file path (png/jpg/gif/webp/svg). File paths are read and base64-encoded locally. |
+| `dokk_add_drawing` | Freeform path (with per-point stroke width) in a `baseWidth × baseHeight` viewBox. |
+| `dokk_update_element` | `{ id, patch }` — shallow merges into the element. |
+| `dokk_remove_element` | `{ id }`. |
+| `dokk_arrange` | `{ ids, direction: 'up' \| 'down' \| 'front' \| 'back' }`. |
 
 ### Presence
 
 | Tool | What it does |
 |---|---|
-| `doka_move_cursor` | `{ x, y }` (`null, null` to park off-canvas). Useful as an "I'm about to do X" cue. |
-| `doka_set_selection` | `{ ids }`. Highlights for other peers what the agent is focused on. |
+| `dokk_move_cursor` | `{ x, y }` (`null, null` to park off-canvas). Useful as an "I'm about to do X" cue. |
+| `dokk_set_selection` | `{ ids }`. Highlights for other peers what the agent is focused on. |
 
 ## Limits / sharp edges
 
-- **Image bandwidth.** `doka_add_image` routes the data URL through the collab
+- **Image bandwidth.** `dokk_add_image` routes the data URL through the collab
   WebSocket. Fine for occasional use; if you're regularly attaching large
   images, the better path is a future "upload-to-GitHub-via-host" detour.
 - **`createBoard` requires the host online.** The server rejects the request

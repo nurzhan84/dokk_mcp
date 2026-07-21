@@ -1,4 +1,4 @@
-// Tool registry — maps each MCP tool to a method on a shared DokaAgent.
+// Tool registry — maps each MCP tool to a method on a shared DokkAgent.
 //
 // Tools deliberately stay close to the underlying collab ops (one per kind)
 // instead of layering "create a flowchart"-style helpers. The LLM composes;
@@ -9,7 +9,7 @@ import { readFileSync } from 'node:fs';
 import { extname } from 'node:path';
 import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { DokaAgent, type BoardElementLike } from './core/doka-agent.js';
+import { DokkAgent, type BoardElementLike } from './core/dokk-agent.js';
 import {
   addArrowInput,
   addDrawingInput,
@@ -362,7 +362,7 @@ async function fetchImageAsDataUrl(url: string): Promise<string> {
   const res = await fetch(url, {
     signal: AbortSignal.timeout(HTTP_IMAGE_TIMEOUT_MS),
     // Some hosts 403 unfamiliar UAs; identify but don't masquerade.
-    headers: { 'User-Agent': 'doka-mcp/0.0.1 (+image-fetch)' },
+    headers: { 'User-Agent': 'dokk-mcp/0.0.1 (+image-fetch)' },
     redirect: 'follow',
   });
   if (!res.ok) {
@@ -408,66 +408,66 @@ async function resolveImageSrc(src: string): Promise<string> {
   return `data:${mime};base64,${buf.toString('base64')}`;
 }
 
-/** Eagerly open a session from DOKA_* env vars before the MCP client sends
- *  its first tool call. Used by the stdio bootstrap when DOKA_AUTOCONNECT=1
+/** Eagerly open a session from DOKK_* env vars before the MCP client sends
+ *  its first tool call. Used by the stdio bootstrap when DOKK_AUTOCONNECT=1
  *  so the agent can call add_xxx / list_xxx / etc. without an explicit
- *  doka_connect. Logs to stderr on failure but does NOT throw — the MCP
- *  process should stay up so the agent can still call doka_connect manually. */
-export async function autoConnectFromEnvIfRequested(agent: DokaAgent): Promise<void> {
-  if (process.env.DOKA_AUTOCONNECT !== '1' && process.env.DOKA_AUTOCONNECT !== 'true') return;
+ *  dokk_connect. Logs to stderr on failure but does NOT throw — the MCP
+ *  process should stay up so the agent can still call dokk_connect manually. */
+export async function autoConnectFromEnvIfRequested(agent: DokkAgent): Promise<void> {
+  if (process.env.DOKK_AUTOCONNECT !== '1' && process.env.DOKK_AUTOCONNECT !== 'true') return;
   try {
     const opts = applyConnectDefaults({});
     const result = await agent.connect(opts);
     console.error(
-      `[doka-mcp] autoconnected as ${result.peerId} on board ${result.boardId} ` +
+      `[dokk-mcp] autoconnected as ${result.peerId} on board ${result.boardId} ` +
       `(${result.readOnly ? 'read-only' : 'writable'})`,
     );
   } catch (err) {
-    console.error('[doka-mcp] autoconnect failed:', err instanceof Error ? err.message : err);
+    console.error('[dokk-mcp] autoconnect failed:', err instanceof Error ? err.message : err);
   }
 }
 
-/** Merge call-time args with `DOKA_*` env vars so MCP clients (Codex,
+/** Merge call-time args with `DOKK_*` env vars so MCP clients (Codex,
  *  Claude Desktop, etc.) can pre-supply credentials once in their config
  *  instead of forcing the agent to repeat them on every connect. */
 function applyConnectDefaults(
-  args: Partial<Parameters<DokaAgent['connect']>[0]>,
-): Parameters<DokaAgent['connect']>[0] {
-  const collabUrl = args.collabUrl ?? process.env.DOKA_COLLAB_URL;
-  const boardId = args.boardId ?? process.env.DOKA_BOARD_ID;
-  const inviteToken = args.inviteToken ?? process.env.DOKA_INVITE_TOKEN;
+  args: Partial<Parameters<DokkAgent['connect']>[0]>,
+): Parameters<DokkAgent['connect']>[0] {
+  const collabUrl = args.collabUrl ?? process.env.DOKK_COLLAB_URL;
+  const boardId = args.boardId ?? process.env.DOKK_BOARD_ID;
+  const inviteToken = args.inviteToken ?? process.env.DOKK_INVITE_TOKEN;
   const missing: string[] = [];
-  if (!collabUrl) missing.push('collabUrl (or DOKA_COLLAB_URL)');
-  if (!boardId) missing.push('boardId (or DOKA_BOARD_ID)');
-  if (!inviteToken) missing.push('inviteToken (or DOKA_INVITE_TOKEN)');
+  if (!collabUrl) missing.push('collabUrl (or DOKK_COLLAB_URL)');
+  if (!boardId) missing.push('boardId (or DOKK_BOARD_ID)');
+  if (!inviteToken) missing.push('inviteToken (or DOKK_INVITE_TOKEN)');
   if (missing.length > 0) {
-    throw new Error(`doka_connect missing required: ${missing.join(', ')}`);
+    throw new Error(`dokk_connect missing required: ${missing.join(', ')}`);
   }
   return {
     collabUrl: collabUrl!,
     boardId: boardId!,
     inviteToken: inviteToken!,
-    name: args.name ?? process.env.DOKA_AGENT_NAME,
-    controlledBy: args.controlledBy ?? process.env.DOKA_CONTROLLED_BY,
+    name: args.name ?? process.env.DOKK_AGENT_NAME,
+    controlledBy: args.controlledBy ?? process.env.DOKK_CONTROLLED_BY,
   };
 }
 
-export function registerTools(server: McpServer, agent: DokaAgent): void {
+export function registerTools(server: McpServer, agent: DokkAgent): void {
   // -- connection --------------------------------------------------------
 
   server.registerTool(
-    'doka_connect',
+    'dokk_connect',
     {
-      title: 'Connect to a Doka board',
+      title: 'Connect to a Dokk board',
       description:
         'Open a collaborative session on the given board using an invite token. ' +
         'Required before any add_*/update/remove/arrange tool. Returns the agent\'s ' +
         'peerId, the initial element snapshot, and the host\'s hierarchy (for picking ' +
         'a parent chapter when creating new boards).\n\n' +
-        'Any omitted field falls back to the matching DOKA_* env var ' +
-        '(DOKA_COLLAB_URL / DOKA_BOARD_ID / DOKA_INVITE_TOKEN / DOKA_AGENT_NAME / ' +
-        'DOKA_CONTROLLED_BY) — handy when the MCP client supplies them once in its ' +
-        'config instead of via every tool call. Set DOKA_AUTOCONNECT=1 in the MCP ' +
+        'Any omitted field falls back to the matching DOKK_* env var ' +
+        '(DOKK_COLLAB_URL / DOKK_BOARD_ID / DOKK_INVITE_TOKEN / DOKK_AGENT_NAME / ' +
+        'DOKK_CONTROLLED_BY) — handy when the MCP client supplies them once in its ' +
+        'config instead of via every tool call. Set DOKK_AUTOCONNECT=1 in the MCP ' +
         'process\'s env and the server connects on startup; you don\'t need to call ' +
         'this tool at all unless you want to switch boards.',
       inputSchema: connectInput.shape,
@@ -493,7 +493,7 @@ export function registerTools(server: McpServer, agent: DokaAgent): void {
   );
 
   server.registerTool(
-    'doka_disconnect',
+    'dokk_disconnect',
     {
       title: 'Disconnect from the current board',
       description: 'Close the collab session cleanly. Idempotent.',
@@ -510,7 +510,7 @@ export function registerTools(server: McpServer, agent: DokaAgent): void {
   );
 
   server.registerTool(
-    'doka_switch_board',
+    'dokk_switch_board',
     {
       title: 'Switch to another board (same invite)',
       description:
@@ -537,7 +537,7 @@ export function registerTools(server: McpServer, agent: DokaAgent): void {
   // -- hierarchy ---------------------------------------------------------
 
   server.registerTool(
-    'doka_create_board',
+    'dokk_create_board',
     {
       title: 'Ask the host to create a new board',
       description:
@@ -563,7 +563,7 @@ export function registerTools(server: McpServer, agent: DokaAgent): void {
   // -- observation -------------------------------------------------------
 
   server.registerTool(
-    'doka_list_elements',
+    'dokk_list_elements',
     {
       title: 'List elements on the current board',
       description: 'Returns the agent\'s in-memory mirror of the board snapshot.',
@@ -579,7 +579,7 @@ export function registerTools(server: McpServer, agent: DokaAgent): void {
   );
 
   server.registerTool(
-    'doka_get_element',
+    'dokk_get_element',
     {
       title: 'Get one element by id',
       description: 'Returns the element from the mirror, or null if it\'s not present.',
@@ -595,7 +595,7 @@ export function registerTools(server: McpServer, agent: DokaAgent): void {
   );
 
   server.registerTool(
-    'doka_list_peers',
+    'dokk_list_peers',
     {
       title: 'List peers in the current room',
       description: 'Returns the live peer roster (host + guests) on this board.',
@@ -607,7 +607,7 @@ export function registerTools(server: McpServer, agent: DokaAgent): void {
   // -- element ops -------------------------------------------------------
 
   server.registerTool(
-    'doka_add_shape',
+    'dokk_add_shape',
     {
       title: 'Add a shape element',
       description:
@@ -615,14 +615,14 @@ export function registerTools(server: McpServer, agent: DokaAgent): void {
         'Returns the new element id, plus any legibility warnings.\n\n' +
         'Shape types — pick by intent:\n' +
         '  • rectangle / circle / triangle / rhombus: generic nodes for diagrams, flowcharts, etc.\n' +
-        '  • text: bare label, no fill outline (prefer `doka_add_text`).\n' +
+        '  • text: bare label, no fill outline (prefer `dokk_add_text`).\n' +
         '  • message: speech-bubble-style callout for quotes, annotations, or commentary.\n' +
         '  • info: dedicated node for technical detail — background processes, endpoint ' +
         'request/response payloads, data examples, edge cases. The on-canvas label goes in ' +
         '`text` (keep it short — a name like "POST /orders" or "Order ingestion job"); the ' +
         'full long-form content (request/response bodies, sample payloads, sequence narrative) ' +
         'goes in `infoText`, which opens in a side panel when the user double-clicks the node. ' +
-        'Connect multiple `info` nodes with `doka_add_arrow` to model flows: chain them in ' +
+        'Connect multiple `info` nodes with `dokk_add_arrow` to model flows: chain them in ' +
         'sequence for a step-by-step process, or fan out / fan in for parallel branches.\n\n' +
         'Info-shape geometry is FIXED: a 32×32 blue circle. Any width / height / color / ' +
         'textColor / fontSize you pass for an info shape is ignored — the MCP server overrides ' +
@@ -727,7 +727,7 @@ export function registerTools(server: McpServer, agent: DokaAgent): void {
   );
 
   server.registerTool(
-    'doka_add_text',
+    'dokk_add_text',
     {
       title: 'Add a text element',
       description:
@@ -808,7 +808,7 @@ export function registerTools(server: McpServer, agent: DokaAgent): void {
   );
 
   server.registerTool(
-    'doka_add_arrow',
+    'dokk_add_arrow',
     {
       title: 'Add an arrow element',
       description:
@@ -833,14 +833,14 @@ export function registerTools(server: McpServer, agent: DokaAgent): void {
   );
 
   server.registerTool(
-    'doka_add_image',
+    'dokk_add_image',
     {
       title: 'Add an image element',
       description:
         '⚠️ STRONGLY PREFER a file path or `http(s)://` URL over an inline `data:` URL. ' +
         'Inline base64 has to travel through your MCP client\'s JSON-RPC pipe AND get rendered ' +
         'in its request UI; for screenshots / generated images (200 KB – 2 MB) this often ' +
-        'stalls the client UI for a minute or more even though the Doka side completes ' +
+        'stalls the client UI for a minute or more even though the Dokk side completes ' +
         'instantly. File paths and URLs are read entirely inside the MCP server process and ' +
         'cost nothing on the JSON-RPC side.\n\n' +
         '`src` accepts:\n' +
@@ -891,7 +891,7 @@ export function registerTools(server: McpServer, agent: DokaAgent): void {
   );
 
   server.registerTool(
-    'doka_add_youtube',
+    'dokk_add_youtube',
     {
       title: 'Add an embedded YouTube video',
       description:
@@ -934,7 +934,7 @@ export function registerTools(server: McpServer, agent: DokaAgent): void {
   );
 
   server.registerTool(
-    'doka_add_drawing',
+    'dokk_add_drawing',
     {
       title: 'Add a freeform drawing',
       description:
@@ -955,7 +955,7 @@ export function registerTools(server: McpServer, agent: DokaAgent): void {
   );
 
   server.registerTool(
-    'doka_update_element',
+    'dokk_update_element',
     {
       title: 'Update fields on an existing element',
       description:
@@ -1038,7 +1038,7 @@ export function registerTools(server: McpServer, agent: DokaAgent): void {
   );
 
   server.registerTool(
-    'doka_remove_element',
+    'dokk_remove_element',
     {
       title: 'Remove an element',
       description: 'Permanently remove the element from the board.',
@@ -1055,7 +1055,7 @@ export function registerTools(server: McpServer, agent: DokaAgent): void {
   );
 
   server.registerTool(
-    'doka_arrange',
+    'dokk_arrange',
     {
       title: 'Reorder elements (z-order)',
       description: 'Move the selected ids up / down / to front / to back of the z-order.',
@@ -1074,7 +1074,7 @@ export function registerTools(server: McpServer, agent: DokaAgent): void {
   // -- presence ----------------------------------------------------------
 
   server.registerTool(
-    'doka_move_cursor',
+    'dokk_move_cursor',
     {
       title: 'Move the agent\'s cursor',
       description:
@@ -1093,7 +1093,7 @@ export function registerTools(server: McpServer, agent: DokaAgent): void {
   );
 
   server.registerTool(
-    'doka_set_selection',
+    'dokk_set_selection',
     {
       title: 'Set the agent\'s selection',
       description: 'Highlights the given element ids as the agent\'s selection for other peers.',

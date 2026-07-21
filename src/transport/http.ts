@@ -2,14 +2,14 @@
 // client can point at. Uses the SDK's StreamableHTTP transport, which speaks
 // SSE for server→client streams and POST for client→server requests.
 //
-// One DokaAgent per HTTP session — stale sessions are GC'd on transport
+// One DokkAgent per HTTP session — stale sessions are GC'd on transport
 // close, freeing the outbound WebSocket back to the collab server.
 
 import http from 'node:http';
 import { randomUUID } from 'node:crypto';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { buildServer } from '../server.js';
-import { DokaAgent } from '../core/doka-agent.js';
+import { DokkAgent } from '../core/dokk-agent.js';
 
 const PORT = Number(process.env.PORT ?? 8788);
 const HOST = process.env.HOST ?? '0.0.0.0';
@@ -17,7 +17,7 @@ const SESSION_HEADER = 'mcp-session-id';
 
 type Session = {
   transport: StreamableHTTPServerTransport;
-  agent: DokaAgent;
+  agent: DokkAgent;
 };
 const sessions = new Map<string, Session>();
 
@@ -80,18 +80,18 @@ const httpServer = http.createServer(async (req, res) => {
 
     await existing.transport.handleRequest(req, res, body);
   } catch (err) {
-    console.error('[doka-mcp-http] handler error:', err);
+    console.error('[dokk-mcp-http] handler error:', err);
     if (!res.headersSent) res.writeHead(500).end('internal error');
     else res.end();
   }
 });
 
 httpServer.listen(PORT, HOST, () => {
-  console.error(`[doka-mcp-http] listening on http://${HOST}:${PORT}/mcp`);
+  console.error(`[dokk-mcp-http] listening on http://${HOST}:${PORT}/mcp`);
 });
 
 const shutdown = (): void => {
-  console.error('[doka-mcp-http] shutting down');
+  console.error('[dokk-mcp-http] shutting down');
   httpServer.close();
   for (const { agent } of sessions.values()) {
     void agent.disconnect().catch(() => { /* */ });

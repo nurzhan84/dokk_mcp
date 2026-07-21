@@ -1,4 +1,4 @@
-// DokaAgent — programmatic collab client used by the MCP tool layer.
+// DokkAgent — programmatic collab client used by the MCP tool layer.
 //
 // Maintains one WebSocket session for the agent (per active board), mirrors
 // the server snapshot in memory so tools can read elements without an extra
@@ -61,7 +61,7 @@ const TERMINAL_ERROR_CODES = new Set([
 
 const DEFAULT_REQUEST_TIMEOUT_MS = 10_000;
 
-export class DokaAgent {
+export class DokkAgent {
   /** Open WebSocket; null while disconnected. */
   private ws: WebSocket | null = null;
   /** Mirror of session.elements, kept up to date by incoming ops. */

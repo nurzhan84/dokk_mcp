@@ -11,10 +11,10 @@ async function main(): Promise<void> {
   const { server, agent } = buildServer();
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  // DOKA_AUTOCONNECT=1: open the collab session up-front so the agent can go
-  // straight to add_*/list_*/etc. without first calling doka_connect. Errors
+  // DOKK_AUTOCONNECT=1: open the collab session up-front so the agent can go
+  // straight to add_*/list_*/etc. without first calling dokk_connect. Errors
   // are logged to stderr but don't abort the process — the agent can still
-  // call doka_connect manually to recover.
+  // call dokk_connect manually to recover.
   await autoConnectFromEnvIfRequested(agent);
   // Best-effort cleanup when the client closes the pipe so we don't leak the
   // outbound WebSocket connection to the collab server.
@@ -24,10 +24,10 @@ async function main(): Promise<void> {
   process.once('SIGINT', shutdown);
   process.once('SIGTERM', shutdown);
   process.stdin.once('end', shutdown);
-  console.error('[doka-mcp-stdio] ready');
+  console.error('[dokk-mcp-stdio] ready');
 }
 
 main().catch((err) => {
-  console.error('[doka-mcp-stdio] fatal:', err);
+  console.error('[dokk-mcp-stdio] fatal:', err);
   process.exit(1);
 });
